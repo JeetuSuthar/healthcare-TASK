@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate summary stats
     const avgShiftDuration = shifts.length > 0 
-      ? shifts.reduce((sum, shift) => {
+      ? shifts.reduce((sum:any, shift:any) => {
           const duration = new Date(shift.clockOutTime!).getTime() - new Date(shift.clockInTime).getTime()
           return sum + (duration / (1000 * 60 * 60))
         }, 0) / shifts.length
