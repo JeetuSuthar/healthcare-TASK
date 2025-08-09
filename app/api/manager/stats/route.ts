@@ -9,7 +9,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any
+    interface JwtPayload {
+      userId: string;
+      role: string;
+      exp?: number;
+      iat?: number;
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as JwtPayload
     
     // Verify manager role
     const user = await prisma.user.findUnique({
@@ -42,7 +49,7 @@ export async function GET(request: NextRequest) {
     })
 
     const avgHoursToday = todayShifts.length > 0 
-      ? todayShifts.reduce((sum, shift) => {
+      ? todayShifts.reduce((sum: any, shift: any) => {
           const duration = new Date(shift.clockOutTime!).getTime() - new Date(shift.clockInTime).getTime()
           return sum + (duration / (1000 * 60 * 60))
         }, 0) / todayShifts.length
@@ -63,7 +70,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const totalHoursThisWeek = weekShifts.reduce((sum, shift) => {
+    const totalHoursThisWeek = weekShifts.reduce((sum: any, shift: any) => {
       const duration = new Date(shift.clockOutTime!).getTime() - new Date(shift.clockInTime).getTime()
       return sum + (duration / (1000 * 60 * 60))
     }, 0)

@@ -1,0 +1,7 @@
+
+{
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "build": "pnpm type-check && next build"
+  }
+}

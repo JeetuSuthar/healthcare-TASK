@@ -9,7 +9,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any
+    interface JwtPayload {
+      userId: string;
+      role: string;
+      exp?: number;
+      iat?: number;
+    }
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as JwtPayload
 
     const activeShift = await prisma.shift.findFirst({
       where: {

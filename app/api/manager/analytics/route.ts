@@ -9,7 +9,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any
+    interface JwtPayload {
+      userId: string;
+      role: string;
+      exp?: number;
+      iat?: number;
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as JwtPayload
     
     // Verify manager role
     const user = await prisma.user.findUnique({
@@ -48,8 +55,9 @@ export async function POST(request: NextRequest) {
 
     // Calculate summary stats
     const avgShiftDuration = shifts.length > 0 
-      ? shifts.reduce((sum:any, shift:any) => {
-          const duration = new Date(shift.clockOutTime!).getTime() - new Date(shift.clockInTime).getTime()
+      ? shifts.reduce((sum: number, shift: { clockOutTime: Date | string | null; clockInTime: Date | string }) => {
+          if (!shift.clockOutTime) return sum;
+          const duration = new Date(shift.clockOutTime).getTime() - new Date(shift.clockInTime).getTime()
           return sum + (duration / (1000 * 60 * 60))
         }, 0) / shifts.length
       : 0
@@ -70,31 +78,73 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function processShiftsForDailyHours(shifts: any[], viewType: string) {
-  const dailyData: { [key: string]: number } = {}
-  
-  shifts.forEach(shift => {
-    const date = new Date(shift.clockInTime).toISOString().split('T')[0]
-    const duration = (new Date(shift.clockOutTime).getTime() - new Date(shift.clockInTime).getTime()) / (1000 * 60 * 60)
-    
-    if (!dailyData[date]) {
-      dailyData[date] = 0
-    }
-    dailyData[date] += duration
-  })
-
-  return Object.entries(dailyData).map(([date, hours]) => ({
-    date,
-    hours: Math.round(hours * 10) / 10,
-  }))
+interface Shift {
+  clockInTime: Date | string;
+  clockOutTime: Date | string | null;
+  user: {
+    firstName: string;
+    lastName: string;
+  };
 }
 
-function processShiftsForStaffHours(shifts: any[]) {
+function processShiftsForDailyHours(shifts: Shift[], viewType: string) {
+  if (viewType === 'weekly') {
+    // Group by week number (ISO week)
+    const weekData: { [key: string]: number } = {}
+    shifts.forEach(shift => {
+      if (!shift.clockOutTime) return;
+      const d = new Date(shift.clockInTime)
+      // Get ISO week string: YYYY-Www
+      const year = d.getUTCFullYear()
+      const week = getISOWeek(d)
+      const weekKey = `${year}-W${week.toString().padStart(2, '0')}`
+      const clockOutDate = new Date(shift.clockOutTime)
+      const clockInDate = new Date(shift.clockInTime)
+      const duration = (clockOutDate.getTime() - clockInDate.getTime()) / (1000 * 60 * 60)
+      if (!weekData[weekKey]) weekData[weekKey] = 0
+      weekData[weekKey] += duration
+    })
+    return Object.entries(weekData).map(([week, hours]) => ({
+      date: week,
+      hours: Math.round(hours * 10) / 10,
+    }))
+  } else {
+    // Default: group by day
+    const dailyData: { [key: string]: number } = {}
+    shifts.forEach(shift => {
+      if (!shift.clockOutTime) return;
+      const date = new Date(shift.clockInTime).toISOString().split('T')[0]
+      const clockOutDate = new Date(shift.clockOutTime)
+      const clockInDate = new Date(shift.clockInTime)
+      const duration = (clockOutDate.getTime() - clockInDate.getTime()) / (1000 * 60 * 60)
+      if (!dailyData[date]) dailyData[date] = 0
+      dailyData[date] += duration
+    })
+    return Object.entries(dailyData).map(([date, hours]) => ({
+      date,
+      hours: Math.round(hours * 10) / 10,
+    }))
+  }
+}
+
+// Helper: ISO week number
+function getISOWeek(date: Date) {
+  const tmp = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()))
+  const dayNum = tmp.getUTCDay() || 7
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum)
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(),0,1))
+  return Math.ceil((((tmp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)
+}
+
+function processShiftsForStaffHours(shifts: Shift[]) {
   const staffData: { [key: string]: number } = {}
   
   shifts.forEach(shift => {
+    if (!shift.clockOutTime) return;
     const staffName = `${shift.user.firstName} ${shift.user.lastName}`
-    const duration = (new Date(shift.clockOutTime).getTime() - new Date(shift.clockInTime).getTime()) / (1000 * 60 * 60)
+    const clockOutDate = new Date(shift.clockOutTime)
+    const clockInDate = new Date(shift.clockInTime)
+    const duration = (clockOutDate.getTime() - clockInDate.getTime()) / (1000 * 60 * 60)
     
     if (!staffData[staffName]) {
       staffData[staffName] = 0
@@ -108,7 +158,7 @@ function processShiftsForStaffHours(shifts: any[]) {
   }))
 }
 
-function processShiftsForDistribution(shifts: any[]) {
+function processShiftsForDistribution(shifts: Shift[]) {
   const morningShifts = shifts.filter(shift => {
     const hour = new Date(shift.clockInTime).getHours()
     return hour >= 6 && hour < 14

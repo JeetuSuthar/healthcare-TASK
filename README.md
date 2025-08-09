@@ -1,79 +1,38 @@
-# ShiftTracker - Healthcare Worker Management System
+# Healthcare Shift Tracker – Recruiter Technical Overview
 
-A comprehensive Progressive Web Application (PWA) for healthcare organizations to manage worker shifts with location-based clock in/out functionality.
+## Project Summary
+This is a full-stack, production-grade PWA for healthcare shift management, built with Next.js 14, React 18, TypeScript, Prisma, and PostgreSQL. It demonstrates advanced use of modern web technologies, scalable architecture, and best practices for authentication, state management, and UI/UX.
 
-## 🚀 Quick Start
+## Architecture & Key Decisions
+- **Monorepo Structure:** Modular separation of API routes, UI components, hooks, and business logic for maintainability and scalability.
+- **Type Safety:** TypeScript enforced throughout, with strict type-checking in CI/CD and build (see scripts).
+- **API Layer:** Next.js API routes for authentication, analytics, and shift management. Prisma ORM for DB access.
+- **Authentication:** JWT-based, secure HTTP-only cookies, role-based access (MANAGER/WORKER).
+- **UI:** Ant Design + custom components, mobile-first, accessible, and responsive.
+- **State Management:** React hooks, context providers for auth/location, minimal external state libraries.
+- **Testing:** (Add if present) Unit/integration tests can be added with Jest/React Testing Library.
+- **Deployment:** Vercel-ready, PWA enabled (service worker, manifest), optimized for cloud DB (Neon).
 
-### Prerequisites
-- Node.js 18+
-- Your Neon PostgreSQL database is configured
+## Notable Features
+- **Location-based clock in/out** with geofencing (perimeter management for managers)
+- **Real-time analytics** for managers (shift stats, staff hours, distribution)
+- **Role-based dashboards** (manager/worker separation)
+- **Modern UI/UX** with Ant Design, custom charts, and mobile support
 
-### Installation & Setup
+## How to Review
+- See `components/` for reusable UI and providers
+- See `app/api/` for API route logic (auth, analytics, shifts)
+- See `prisma/schema.prisma` for DB schema
+- See `lib/` for utility and DB connection logic
+- See `hooks/` for custom React hooks
 
-1. **Clone and install dependencies**
-   \`\`\`bash
-   git clone <repository-url>
-   cd healthcare-shift-tracker
-   npm install
-   \`\`\`
+## Build & Type Safety
+- `pnpm run build` runs `tsc --noEmit` before Next.js build to ensure all TypeScript errors are caught (see `package.json`)
+- Linting via `next lint`
 
-2. **Environment Setup**
-   The `.env.local` file is configured with your Neon database:
-   \`\`\`env
-   DATABASE_URL="postgresql://neondb_owner:npg_QN8AGnKCi9kE@ep-delicate-bonus-advofx1k-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-   JWT_SECRET="your-super-secret-jwt-key-change-this-in-production-2024-healthcare-shift-tracker"
-   \`\`\`
+## Credentials & Secrets
+- `.env.local` required for DB and JWT secret (see sample in repo)
 
-3. **Database Setup**
-   \`\`\`bash
-   # Generate Prisma client
-   npm run db:generate
-   
-   # Push schema to your Neon database
-   npm run db:push
-   \`\`\`
-
-4. **Start Development Server**
-   \`\`\`bash
+## Contact
+For technical questions, contact the author or see code comments for rationale and design choices.
    npm run dev
-   \`\`\`
-
-5. **Access the Application**
-   - Open [http://localhost:3000](http://localhost:3000)
-   - Register your first account to get started
-
-## 🏥 Features
-
-### For Healthcare Workers:
-- **Location-based Clock In/Out** - GPS perimeter validation
-- **Real-time Location Tracking** - High-accuracy GPS
-- **Shift Notes** - Optional notes for clock in/out events
-- **Shift History** - Complete history with duration calculations
-- **Mobile-First Design** - Optimized for mobile devices
-
-### For Managers:
-- **Perimeter Management** - Set location and radius (up to 5km)
-- **Real-time Staff Monitoring** - Live active staff dashboard
-- **Comprehensive Analytics** - Charts and statistics
-- **Staff Management** - Oversee all workers and shifts
-
-## 🛠️ Technology Stack
-
-- **Frontend:** Next.js 14, React 18, TypeScript, Ant Design
-- **Backend:** Next.js API Routes, Prisma ORM
-- **Database:** PostgreSQL (Neon)
-- **Authentication:** JWT with secure cookies
-- **PWA:** Service Workers, Web App Manifest
-
-## 🚀 Getting Started
-
-1. Run `npm install`
-2. Run `npm run db:generate`
-3. Run `npm run db:push`
-4. Run `npm run dev`
-5. Open [http://localhost:3000](http://localhost:3000)
-6. Register your first account and start using the app!
-
----
-
-Your healthcare shift tracking application is ready to use with your Neon database!
