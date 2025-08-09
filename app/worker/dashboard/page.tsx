@@ -70,6 +70,22 @@ export default function WorkerDashboard() {
 
     setLoading(true)
     try {
+      // If trying to clock in but there's already an active shift
+      if (actionType === 'clockin' && currentShift) {
+        // Try to reset the active shift first
+        const resetResponse = await fetch('/api/shifts/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        
+        if (resetResponse.ok) {
+          const resetResult = await resetResponse.json()
+          if (resetResult.success) {
+            message.info('Previous shift was automatically closed before starting a new one.')
+          }
+        }
+      }
+      
       const endpoint = actionType === 'clockin' ? '/api/shifts/clockin' : '/api/shifts/clockout'
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -93,14 +109,39 @@ export default function WorkerDashboard() {
         checkActiveShift()
       } else {
         const error = await response.json()
-        message.error(error.message || 'Action failed')
+        if (actionType === 'clockin' && error.message === 'You already have an active shift') {
+          // Show a modal asking if they want to clock out first
+          Modal.confirm({
+            title: 'Active Shift Detected',
+            icon: <ExclamationCircleOutlined />,
+            content: 'You already have an active shift. Would you like to clock out of that shift first and then start a new one?',
+            onOk: async () => {
+              try {
+                // Reset the active shift
+                await fetch('/api/shifts/reset', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                })
+                
+                // Try to clock in again
+                message.info('Previous shift closed. Now trying to clock in again...')
+                setTimeout(() => confirmClockAction(), 1000)
+              } catch (e) {
+                console.error('Failed to reset shift:', e)
+                message.error('Failed to reset your active shift.')
+              }
+            },
+          })
+        } else {
+          message.error(error.message || 'Action failed')
+        }
       }
     } catch (error) {
       message.error('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
-  }, [actionType, location, note, checkActiveShift])
+  }, [actionType, location, note, checkActiveShift, currentShift])
 
   const closeModal = useCallback(() => {
     setNoteModalVisible(false)

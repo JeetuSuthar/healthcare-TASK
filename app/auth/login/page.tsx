@@ -18,7 +18,41 @@ export default function LoginPage() {
     try {
       await login(values.email, values.password)
       message.success('Login successful!')
-      router.push('/')
+      
+      // Get the user data after login
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        const userData = await response.json()
+        
+        // For workers, check if there's an active shift that needs to be reset
+        if (userData.role === 'WORKER') {
+          try {
+            // Try to reset any active shifts
+            const resetResponse = await fetch('/api/shifts/reset', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+            })
+            
+            if (resetResponse.ok) {
+              const resetResult = await resetResponse.json()
+              if (resetResult.success) {
+                message.info('Previous unfinished shift has been automatically closed.', 5)
+              }
+            }
+          } catch (e) {
+            console.error("Failed to reset active shift:", e)
+          }
+        }
+        
+        // Directly redirect based on role
+        if (userData.role === 'MANAGER') {
+          router.push('/manager/dashboard')
+        } else {
+          router.push('/worker/dashboard')
+        }
+      } else {
+        router.push('/')
+      }
     } catch (error) {
       message.error('Login failed. Please check your credentials.')
     } finally {
