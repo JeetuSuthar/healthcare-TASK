@@ -13,10 +13,12 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
+  password  String?  // Make password optional for Google OAuth users
   firstName String
   lastName  String
   role      Role
+  googleId  String?  @unique // Google OAuth ID
+  avatar    String?  // Profile picture URL from Google
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
