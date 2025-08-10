@@ -88,7 +88,7 @@ export default function RootLayout({
               <AuthProvider>
                 <LocationProvider>
                   {children}
-                  <PerformanceMonitor />
+                
                 </LocationProvider>
               </AuthProvider>
             </ConfigProvider>

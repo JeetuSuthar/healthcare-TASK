@@ -52,7 +52,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
   return (
     <Layout className="min-h-screen">
       <Header className="flex items-center justify-between bg-white shadow-sm px-6">
-        <div className="text-xl font-bold text-blue-600">
+        <div className="text-xl font-bold text-cyan-500">
           ShiftTracker Manager
         </div>
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">

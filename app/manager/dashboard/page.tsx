@@ -1,23 +1,20 @@
-'use client'
-
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card, Row, Col, Statistic, Table, Typography, Space, Button, Modal, Spin, Alert } from 'antd'
-import { 
-  UserOutlined, 
-  ClockCircleOutlined, 
-  BarChartOutlined, 
+"use client"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { Card, Row, Col, Statistic, Typography, Button, Modal, Alert } from "antd"
+import {
+  UserOutlined,
+  ClockCircleOutlined,
+  BarChartOutlined,
   SettingOutlined,
   DashboardOutlined,
   TeamOutlined,
-  CalendarOutlined,
-  TrophyOutlined
-} from '@ant-design/icons'
-import { ManagerLayout } from '@/components/layouts/manager-layout'
-import { ActiveStaffTable } from '@/components/manager/active-staff-table'
-import { ShiftAnalytics } from '@/components/manager/shift-analytics'
-import { LocationSettings } from '@/components/manager/location-settings'
-import { Loading } from '@/components/ui/loading'
-
+  TrophyOutlined,
+} from "@ant-design/icons"
+import { ManagerLayout } from "@/components/layouts/manager-layout"
+import { ActiveStaffTable } from "@/components/manager/active-staff-table"
+import { ShiftAnalytics } from "@/components/manager/shift-analytics"
+import { LocationSettings } from "@/components/manager/location-settings"
+import { Loading } from "@/components/ui/loading"
 const { Title, Text } = Typography
 
 interface DashboardStats {
@@ -46,16 +43,16 @@ export default function ManagerDashboard() {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch('/api/manager/stats')
+      const response = await fetch("/api/manager/stats")
       if (response.ok) {
         const data = await response.json()
         setStats(data)
       } else {
-        throw new Error('Failed to fetch dashboard stats')
+        throw new Error("Failed to fetch dashboard stats")
       }
     } catch (error) {
-      console.error('Error fetching stats:', error)
-      setError('Failed to load dashboard statistics')
+      console.error("Error fetching stats:", error)
+      setError("Failed to load dashboard statistics")
     } finally {
       setLoading(false)
     }
@@ -63,7 +60,7 @@ export default function ManagerDashboard() {
 
   useEffect(() => {
     fetchDashboardStats()
-    
+
     // Refresh stats every 30 seconds
     const interval = setInterval(fetchDashboardStats, 30000)
     return () => clearInterval(interval)
@@ -77,40 +74,43 @@ export default function ManagerDashboard() {
     setSettingsVisible(false)
   }, [])
 
-  const statCards = useMemo(() => [
-    {
-      title: 'Currently Clocked In',
-      value: stats.activeStaff,
-      prefix: <UserOutlined />,
-      valueStyle: { color: '#3f8600' },
-      suffix: '',
-      icon: <TeamOutlined className="text-2xl text-green-500" />,
-    },
-    {
-      title: 'Avg Hours Today',
-      value: stats.avgHoursToday,
-      prefix: <ClockCircleOutlined />,
-      valueStyle: { color: '#1890ff' },
-      suffix: 'hrs',
-      icon: <ClockCircleOutlined className="text-2xl text-blue-500" />,
-    },
-    {
-      title: 'Total Clocked In Today',
-      value: stats.totalClockedInToday,
-      prefix: <BarChartOutlined />,
-      valueStyle: { color: '#722ed1' },
-      suffix: '',
-      icon: <BarChartOutlined className="text-2xl text-purple-500" />,
-    },
-    {
-      title: 'Total Hours This Week',
-      value: stats.totalHoursThisWeek,
-      prefix: <ClockCircleOutlined />,
-      valueStyle: { color: '#eb2f96' },
-      suffix: 'hrs',
-      icon: <TrophyOutlined className="text-2xl text-pink-500" />,
-    },
-  ], [stats])
+  const statCards = useMemo(
+    () => [
+      {
+        title: "Currently Clocked In",
+        value: stats.activeStaff,
+        prefix: <UserOutlined />,
+        valueStyle: { color: "#00BFA5" }, // liefGreen
+        suffix: "",
+        icon: <TeamOutlined className="text-2xl text-liefGreen-500" />, // liefGreen
+      },
+      {
+        title: "Avg Hours Today",
+        value: stats.avgHoursToday,
+        prefix: <ClockCircleOutlined />,
+        valueStyle: { color: "#00BFA5" }, // liefGreen
+        suffix: "hrs",
+        icon: <ClockCircleOutlined className="text-2xl text-liefGreen-500" />, // liefGreen
+      },
+      {
+        title: "Total Clocked In Today",
+        value: stats.totalClockedInToday,
+        prefix: <BarChartOutlined />,
+        valueStyle: { color: "#00BFA5" }, // liefGreen
+        suffix: "",
+        icon: <BarChartOutlined className="text-2xl text-liefGreen-500" />, // liefGreen
+      },
+      {
+        title: "Total Hours This Week",
+        value: stats.totalHoursThisWeek,
+        prefix: <ClockCircleOutlined />,
+        valueStyle: { color: "#00BFA5" }, // liefGreen
+        suffix: "hrs",
+        icon: <TrophyOutlined className="text-2xl text-liefGreen-500" />, // liefGreen
+      },
+    ],
+    [stats],
+  )
 
   if (loading) {
     return (
@@ -126,11 +126,15 @@ export default function ManagerDashboard() {
         {/* Header */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <Title level={2} className="mb-2 flex items-center">
-              <DashboardOutlined className="mr-3 text-blue-500" />
+            <Title level={2} className="mb-2 flex items-center text-gray-800">
+              {" "}
+              {/* Adjusted text color */}
+              <DashboardOutlined className="mr-3 text-liefGreen-500" /> {/* Adjusted icon color */}
               Manager Dashboard
             </Title>
-            <Text type="secondary">
+            <Text type="secondary" className="text-gray-600">
+              {" "}
+              {/* Adjusted text color */}
               Monitor your team's activity and performance in real-time
             </Text>
           </div>
@@ -139,6 +143,7 @@ export default function ManagerDashboard() {
             icon={<SettingOutlined />}
             onClick={openSettings}
             size="large"
+            style={{ backgroundColor: "#00BFA5", borderColor: "#00BFA5" }} // liefGreen
           >
             Location Settings
           </Button>
@@ -174,12 +179,10 @@ export default function ManagerDashboard() {
                       prefix={stat.prefix}
                       suffix={stat.suffix}
                       valueStyle={stat.valueStyle}
-                      precision={stat.suffix === 'hrs' ? 1 : 0}
+                      precision={stat.suffix === "hrs" ? 1 : 0}
                     />
                   </div>
-                  <div className="ml-4">
-                    {stat.icon}
-                  </div>
+                  <div className="ml-4">{stat.icon}</div>
                 </div>
               </Card>
             </Col>
@@ -194,7 +197,7 @@ export default function ManagerDashboard() {
                 title="Total Staff Members"
                 value={stats.totalStaff}
                 prefix={<UserOutlined />}
-                valueStyle={{ color: '#13c2c2' }}
+                valueStyle={{ color: "#00BFA5" }} // liefGreen
               />
             </Card>
           </Col>
@@ -205,7 +208,7 @@ export default function ManagerDashboard() {
                 value={stats.avgShiftDuration}
                 suffix="hrs"
                 prefix={<ClockCircleOutlined />}
-                valueStyle={{ color: '#fa8c16' }}
+                valueStyle={{ color: "#00BFA5" }} // liefGreen
                 precision={1}
               />
             </Card>
@@ -213,10 +216,12 @@ export default function ManagerDashboard() {
         </Row>
 
         {/* Active Staff Table */}
-        <Card 
+        <Card
           title={
-            <div className="flex items-center">
-              <TeamOutlined className="mr-2 text-green-500" />
+            <div className="flex items-center text-gray-800">
+              {" "}
+              {/* Adjusted text color */}
+              <TeamOutlined className="mr-2 text-liefGreen-500" /> {/* Adjusted icon color */}
               Currently Active Staff
             </div>
           }
@@ -226,10 +231,12 @@ export default function ManagerDashboard() {
         </Card>
 
         {/* Analytics */}
-        <Card 
+        <Card
           title={
-            <div className="flex items-center">
-              <BarChartOutlined className="mr-2 text-blue-500" />
+            <div className="flex items-center text-gray-800">
+              {" "}
+              {/* Adjusted text color */}
+              <BarChartOutlined className="mr-2 text-liefGreen-500" /> {/* Adjusted icon color */}
               Shift Analytics
             </div>
           }
@@ -241,7 +248,9 @@ export default function ManagerDashboard() {
         {/* Location Settings Modal */}
         <Modal
           title={
-            <div className="flex items-center">
+            <div className="flex items-center text-gray-800">
+              {" "}
+              {/* Adjusted text color */}
               <SettingOutlined className="mr-2" />
               Location Settings
             </div>
