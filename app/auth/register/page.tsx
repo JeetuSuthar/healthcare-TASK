@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Card, Form, Input, Button, Typography, Select, message, Space } from 'antd'
 import { UserOutlined, LockOutlined, MailOutlined, TeamOutlined } from '@ant-design/icons'
 import { useAuth } from '@/hooks/use-auth'
+import { Radio } from 'antd'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -92,18 +93,19 @@ export default function RegisterPage() {
             />
           </Form.Item>
 
-          <Form.Item
-            name="role"
-            rules={[{ required: true, message: 'Please select your role!' }]}
-          >
-            <Select
-              placeholder="Select your role"
-              prefix={<TeamOutlined />}
+            <Form.Item
+              name="role"
+              rules={[{ required: true, message: 'Please select your role!' }]}
             >
-              <Option value="WORKER">Healthcare Worker</Option>
-              <Option value="MANAGER">Manager</Option>
-            </Select>
-          </Form.Item>
+              <Radio.Group className="w-full flex justify-between">
+                <Radio.Button value="WORKER" className="flex-1 text-center">
+                  Healthcare Worker
+                </Radio.Button>
+                <Radio.Button value="MANAGER" className="flex-1 text-center">
+                  Manager
+                </Radio.Button>
+              </Radio.Group>
+            </Form.Item>
 
           <Form.Item>
             <Button

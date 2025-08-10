@@ -19,20 +19,28 @@ export default function LoginPage() {
       await login(values.email, values.password)
       message.success('Login successful!')
       
-      // Get the user data after login
-      const response = await fetch('/api/auth/me')
-      if (response.ok) {
-        const userData = await response.json()
-        
-        // Directly redirect based on role
-        if (userData.role === 'MANAGER') {
-          router.push('/manager/dashboard')
-        } else {
-          router.push('/worker/dashboard')
+      // Wait longer to ensure auth context is fully updated
+      setTimeout(async () => {
+        try {
+          // Get fresh user data from server
+          const response = await fetch('/api/auth/me')
+          if (response.ok) {
+            const userData = await response.json()
+            
+            // Navigate based on role with explicit paths
+            if (userData.role === 'MANAGER') {
+              window.location.href = '/manager/dashboard'
+            } else {
+              window.location.href = '/worker/dashboard'
+            }
+          } else {
+            window.location.href = '/'
+          }
+        } catch (error) {
+          console.error('Navigation error:', error)
+          window.location.href = '/'
         }
-      } else {
-        router.push('/')
-      }
+      }, 500) // Longer delay to ensure auth context is ready
     } catch (error) {
       message.error('Login failed. Please check your credentials.')
     } finally {

@@ -14,11 +14,15 @@ export default function HomePage() {
       if (!user) {
         router.push('/auth/login')
       } else {
-        // Redirect based on user role
-        if (user.role === 'MANAGER') {
-          router.push('/manager/dashboard')
-        } else {
-          router.push('/worker/dashboard')
+        // Only redirect if we're on the home page, not if already on a dashboard
+        const currentPath = window.location.pathname
+        if (currentPath === '/') {
+          // Redirect based on user role
+          if (user.role === 'MANAGER') {
+            router.push('/manager/dashboard')
+          } else {
+            router.push('/worker/dashboard')
+          }
         }
       }
     }
