@@ -22,12 +22,15 @@ export async function POST(request: NextRequest) {
 
     if (activeShift) {
       return NextResponse.json(
-        { message: 'You already have an active shift' },
+        { 
+          message: 'You already have an active shift',
+          existingShift: activeShift 
+        },
         { status: 400 }
       )
     }
 
-    // Verify location is within perimeter
+    // Verify location is within perimeter (optional - only if perimeter exists)
     const perimeter = await prisma.locationPerimeter.findFirst({
       where: { isActive: true },
     })
@@ -53,7 +56,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(shift)
+    return NextResponse.json({ 
+      success: true, 
+      shift: shift 
+    })
   } catch (error) {
     console.error('Clock in error:', error)
     return NextResponse.json(

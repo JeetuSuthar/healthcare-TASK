@@ -18,6 +18,7 @@ import { WorkerLayout } from '@/components/layouts/worker-layout'
 import { LocationStatus } from '@/components/location-status'
 import { ShiftHistory } from '@/components/shift-history'
 import { Loading, ActionLoading } from '@/components/ui/loading'
+import { flushSync } from 'react-dom'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -32,22 +33,54 @@ export default function WorkerDashboard() {
   const [loading, setLoading] = useState(false)
   const [shiftLoading, setShiftLoading] = useState(true)
 
+  // Force re-render when currentShift changes - this helps with responsive layout issues
+  const forceRenderKey = useMemo(() => {
+    return `${currentShift?.id || 'no-shift'}-${loading}-${actionType}`
+  }, [currentShift, loading, actionType])
+
   const checkActiveShift = useCallback(async () => {
     try {
       setShiftLoading(true)
-      const response = await fetch('/api/shifts/active')
+      
+      const response = await fetch('/api/shifts/active', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      })
+      
       if (response.ok) {
         const shift = await response.json()
-        setCurrentShift(shift)
+        
+        // Use flushSync to force immediate state update (this fixes DevTools issue)
+        flushSync(() => {
+          setCurrentShift(shift)
+        })
+        
+        // Force a small delay to ensure state has updated
+        await new Promise(resolve => setTimeout(resolve, 50))
+        
+      } else {
+        flushSync(() => {
+          setCurrentShift(null)
+        })
       }
     } catch (error) {
       console.error('Error checking active shift:', error)
+      flushSync(() => {
+        setCurrentShift(null)
+      })
       message.error('Failed to check active shift')
     } finally {
-      setShiftLoading(false)
+      // Ensure loading state is updated after shift state
+      setTimeout(() => {
+        setShiftLoading(false)
+      }, 10)
     }
   }, [])
 
+  // Remove the window event listeners that were causing issues
   useEffect(() => {
     checkActiveShift()
   }, [checkActiveShift])
@@ -69,10 +102,10 @@ export default function WorkerDashboard() {
     }
 
     setLoading(true)
+    
     try {
-      // If trying to clock in but there's already an active shift
+      // If trying to clock in but there's already an active shift, reset first
       if (actionType === 'clockin' && currentShift) {
-        // Try to reset the active shift first
         const resetResponse = await fetch('/api/shifts/reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -81,16 +114,18 @@ export default function WorkerDashboard() {
         if (resetResponse.ok) {
           const resetResult = await resetResponse.json()
           if (resetResult.success) {
-            message.info('Previous shift was automatically closed before starting a new one.')
+            message.info('Previous shift was automatically closed.')
           }
         }
       }
       
       const endpoint = actionType === 'clockin' ? '/api/shifts/clockin' : '/api/shifts/clockout'
+      
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({
           latitude: location.latitude,
@@ -99,17 +134,28 @@ export default function WorkerDashboard() {
         }),
       })
 
+      const result = await response.json()
+
       if (response.ok) {
-        const result = await response.json()
+        // Close modal BEFORE updating state to prevent race conditions
+        flushSync(() => {
+          setNoteModalVisible(false)
+          setNote('')
+          setLoading(false)
+        })
+        
+        // Show success message
         message.success(`Successfully clocked ${actionType === 'clockin' ? 'in' : 'out'}!`)
-        setCurrentShift(actionType === 'clockin' ? result : null)
-        setNoteModalVisible(false)
-        setNote('')
-        // Refresh shift data
-        checkActiveShift()
+        
+        // Wait a moment then refresh state
+        await new Promise(resolve => setTimeout(resolve, 100))
+        await checkActiveShift()
+        
+        return // Exit early after successful action
+        
       } else {
-        const error = await response.json()
-        if (actionType === 'clockin' && error.message === 'You already have an active shift') {
+        // Handle error cases
+        if (actionType === 'clockin' && result.message?.includes('already have an active shift')) {
           // Show a modal asking if they want to clock out first
           Modal.confirm({
             title: 'Active Shift Detected',
@@ -118,14 +164,22 @@ export default function WorkerDashboard() {
             onOk: async () => {
               try {
                 // Reset the active shift
-                await fetch('/api/shifts/reset', {
+                const resetResponse = await fetch('/api/shifts/reset', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                 })
                 
-                // Try to clock in again
-                message.info('Previous shift closed. Now trying to clock in again...')
-                setTimeout(() => confirmClockAction(), 1000)
+                if (resetResponse.ok) {
+                  message.info('Previous shift closed. You can now clock in again.')
+                  // Refresh state and close modal
+                  flushSync(() => {
+                    setNoteModalVisible(false)
+                    setNote('')
+                  })
+                  await checkActiveShift()
+                } else {
+                  throw new Error('Failed to reset shift')
+                }
               } catch (e) {
                 console.error('Failed to reset shift:', e)
                 message.error('Failed to reset your active shift.')
@@ -133,10 +187,11 @@ export default function WorkerDashboard() {
             },
           })
         } else {
-          message.error(error.message || 'Action failed')
+          message.error(result.message || 'Action failed')
         }
       }
     } catch (error) {
+      console.error('Clock action error:', error)
       message.error('Network error. Please try again.')
     } finally {
       setLoading(false)
@@ -149,7 +204,7 @@ export default function WorkerDashboard() {
   }, [])
 
   const currentShiftDuration = useMemo(() => {
-    if (!currentShift) return null
+    if (!currentShift?.clockInTime) return null
     
     const startTime = new Date(currentShift.clockInTime)
     const now = new Date()
@@ -160,6 +215,12 @@ export default function WorkerDashboard() {
     return { hours, minutes }
   }, [currentShift])
 
+  // Add a refresh button for debugging/manual sync
+  const handleRefresh = useCallback(async () => {
+    await checkActiveShift()
+    message.info('Shift status refreshed')
+  }, [checkActiveShift])
+
   if (locationLoading) {
     return (
       <WorkerLayout>
@@ -168,162 +229,182 @@ export default function WorkerDashboard() {
     )
   }
 
+  // Show loading while checking shift status
+  if (shiftLoading) {
+    return (
+      <WorkerLayout>
+        <Loading text="Checking shift status..." fullScreen />
+      </WorkerLayout>
+    )
+  }
+
   return (
     <WorkerLayout>
-      <div className="p-4 max-w-6xl mx-auto">
+      <div className="p-4 max-w-6xl mx-auto" key={forceRenderKey}>
         {/* Header */}
         <div className="mb-6">
-          <Title level={2} className="mb-2">
-            Welcome back, {user?.firstName}! 👋
-          </Title>
+          <div className="flex justify-between items-center">
+            <Title level={2} className="mb-2">
+              Welcome back, {user?.firstName}! 👋
+            </Title>
+            <Button onClick={handleRefresh} size="small">
+              Refresh Status
+            </Button>
+          </div>
           <LocationStatus />
         </div>
 
         {/* Stats Row */}
-        <Row gutter={[16, 16]} className="mb-6">
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="text-center h-full">
-              <Statistic
-                title="Current Status"
-                value={currentShift ? 'Clocked In' : 'Not Clocked In'}
-                prefix={currentShift ? <CheckCircleOutlined className="text-green-500" /> : <ExclamationCircleOutlined className="text-orange-500" />}
-                valueStyle={{ 
-                  color: currentShift ? '#52c41a' : '#fa8c16',
-                  fontSize: '1.2rem'
-                }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="text-center h-full">
-              <Statistic
-                title="Location Status"
-                value={isWithinPerimeter ? 'Within Area' : 'Outside Area'}
-                prefix={<EnvironmentOutlined className={isWithinPerimeter ? "text-green-500" : "text-red-500"} />}
-                valueStyle={{ 
-                  color: isWithinPerimeter ? '#52c41a' : '#ff4d4f',
-                  fontSize: '1.2rem'
-                }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} lg={8}>
-            <Card className="text-center h-full">
-              <Statistic
-                title="Current Shift Duration"
-                value={currentShiftDuration ? `${currentShiftDuration.hours}h ${currentShiftDuration.minutes}m` : 'N/A'}
-                prefix={<ClockCircleOutlined className="text-blue-500" />}
-                valueStyle={{ fontSize: '1.2rem' }}
-              />
-            </Card>
-          </Col>
-        </Row>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+          <Card className="text-center">
+            <Statistic
+              title="Current Status"
+              value={currentShift ? 'Clocked In' : 'Not Clocked In'}
+              prefix={currentShift ? <CheckCircleOutlined className="text-green-500" /> : <ExclamationCircleOutlined className="text-orange-500" />}
+              valueStyle={{ 
+                color: currentShift ? '#52c41a' : '#fa8c16',
+                fontSize: '1.2rem'
+              }}
+            />
+          </Card>
+          <Card className="text-center">
+            <Statistic
+              title="Location Status"
+              value={isWithinPerimeter ? 'Within Area' : 'Outside Area'}
+              prefix={<EnvironmentOutlined className={isWithinPerimeter ? "text-green-500" : "text-red-500"} />}
+              valueStyle={{ 
+                color: isWithinPerimeter ? '#52c41a' : '#ff4d4f',
+                fontSize: '1.2rem'
+              }}
+            />
+          </Card>
+          <Card className="text-center sm:col-span-2 lg:col-span-1">
+            <Statistic
+              title="Current Shift Duration"
+              value={currentShiftDuration ? `${currentShiftDuration.hours}h ${currentShiftDuration.minutes}m` : 'N/A'}
+              prefix={<ClockCircleOutlined className="text-blue-500" />}
+              valueStyle={{ fontSize: '1.2rem' }}
+            />
+          </Card>
+        </div>
 
-        <Row gutter={[16, 16]} className="mb-8">
+        {/* Main Action Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
           {/* Clock In/Out Card */}
-          <Col xs={24} lg={12}>
-            <Card className="text-center h-full shadow-lg">
-              <Space direction="vertical" size="large" className="w-full">
-                <div className="text-6xl text-blue-500 mb-4">
-                  <ClockCircleOutlined />
-                </div>
-                
-                {currentShift ? (
-                  <>
-                    <div>
-                      <Tag color="green" className="text-lg px-4 py-2 mb-2">
-                        Currently Clocked In
-                      </Tag>
-                      <div className="mt-2">
-                        <Text type="secondary">
-                          Since: {new Date(currentShift.clockInTime).toLocaleString()}
-                        </Text>
-                      </div>
-                    </div>
-                    
-                    <Button
-                      type="primary"
-                      danger
-                      size="large"
-                      icon={<LogoutOutlined />}
-                      onClick={() => handleClockAction('clockout')}
-                      className="clock-button h-12 text-lg"
-                      block
-                    >
-                      Clock Out
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <Title level={4}>Ready to start your shift?</Title>
-                      <Text type="secondary" className="block mt-2">
-                        {isWithinPerimeter 
-                          ? '✅ You are within the designated area' 
-                          : '❌ You must be within the designated area to clock in'
-                        }
+          <Card className="text-center shadow-lg">
+            <Space direction="vertical" size="large" className="w-full">
+              <div className="text-6xl text-blue-500 mb-4">
+                <ClockCircleOutlined />
+              </div>
+              
+              {/* Debug Info - Remove this after testing */}
+              <div className="text-xs text-gray-400 border border-gray-200 p-2 rounded mb-4">
+                Debug: {currentShift ? `Active Shift ID: ${currentShift.id}` : 'No Active Shift'} | 
+                Loading: {loading ? 'true' : 'false'} | 
+                Action: {actionType} |
+                Time: {new Date().toLocaleTimeString()}
+              </div>
+              
+              {currentShift ? (
+                <>
+                  <div>
+                    <Tag color="green" className="text-lg px-4 py-2 mb-2">
+                      Currently Clocked In
+                    </Tag>
+                    <div className="mt-2">
+                      <Text type="secondary">
+                        Since: {new Date(currentShift.clockInTime).toLocaleString()}
                       </Text>
                     </div>
-                    
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<ClockCircleOutlined />}
-                      onClick={() => handleClockAction('clockin')}
-                      disabled={!isWithinPerimeter}
-                      className="clock-button h-12 text-lg"
-                      block
-                    >
-                      Clock In
-                    </Button>
-                  </>
-                )}
-              </Space>
-            </Card>
-          </Col>
+                    {currentShift.clockInNote && (
+                      <div className="mt-2">
+                        <Text type="secondary" className="text-sm">
+                          Note: {currentShift.clockInNote}
+                        </Text>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    type="primary"
+                    danger
+                    size="large"
+                    icon={<LogoutOutlined />}
+                    onClick={() => handleClockAction('clockout')}
+                    loading={loading && actionType === 'clockout'}
+                    className="clock-button h-12 text-lg w-full"
+                  >
+                    Clock Out
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <Title level={4}>Ready to start your shift?</Title>
+                    <Text type="secondary" className="block mt-2">
+                      {isWithinPerimeter 
+                        ? '✅ You are within the designated area' 
+                        : '❌ You must be within the designated area to clock in'
+                      }
+                    </Text>
+                  </div>
+                  
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<ClockCircleOutlined />}
+                    onClick={() => handleClockAction('clockin')}
+                    disabled={!isWithinPerimeter}
+                    loading={loading && actionType === 'clockin'}
+                    className="clock-button h-12 text-lg w-full"
+                  >
+                    Clock In
+                  </Button>
+                </>
+              )}
+            </Space>
+          </Card>
 
           {/* Current Location Card */}
-          <Col xs={24} lg={12}>
-            <Card className="h-full shadow-lg">
-              <Space direction="vertical" className="w-full">
-                <div className="flex items-center mb-4">
-                  <EnvironmentOutlined className="text-2xl text-green-500 mr-2" />
-                  <Title level={4} className="m-0">Current Location</Title>
+          <Card className="shadow-lg">
+            <Space direction="vertical" className="w-full">
+              <div className="flex items-center mb-4">
+                <EnvironmentOutlined className="text-2xl text-green-500 mr-2" />
+                <Title level={4} className="m-0">Current Location</Title>
+              </div>
+              
+              {location ? (
+                <div className="space-y-3">
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <Text strong>Latitude:</Text>
+                    <Text className="ml-2 font-mono">{location.latitude.toFixed(6)}</Text>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <Text strong>Longitude:</Text>
+                    <Text className="ml-2 font-mono">{location.longitude.toFixed(6)}</Text>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg">
+                    <Text strong>Accuracy:</Text>
+                    <Text className="ml-2">±{location.accuracy}m</Text>
+                  </div>
+                  <div className="mt-4">
+                    <Tag 
+                      color={isWithinPerimeter ? 'green' : 'red'} 
+                      className="text-lg px-4 py-2"
+                    >
+                      {isWithinPerimeter ? '✅ Within Perimeter' : '❌ Outside Perimeter'}
+                    </Tag>
+                  </div>
                 </div>
-                
-                {location ? (
-                  <div className="space-y-3">
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Text strong>Latitude:</Text>
-                      <Text className="ml-2 font-mono">{location.latitude.toFixed(6)}</Text>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Text strong>Longitude:</Text>
-                      <Text className="ml-2 font-mono">{location.longitude.toFixed(6)}</Text>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <Text strong>Accuracy:</Text>
-                      <Text className="ml-2">±{location.accuracy}m</Text>
-                    </div>
-                    <div className="mt-4">
-                      <Tag 
-                        color={isWithinPerimeter ? 'green' : 'red'} 
-                        className="text-lg px-4 py-2"
-                      >
-                        {isWithinPerimeter ? '✅ Within Perimeter' : '❌ Outside Perimeter'}
-                      </Tag>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <ExclamationCircleOutlined className="text-4xl text-orange-500 mb-4" />
-                    <Text type="secondary">Location not available</Text>
-                  </div>
-                )}
-              </Space>
-            </Card>
-          </Col>
-        </Row>
+              ) : (
+                <div className="text-center py-8">
+                  <ExclamationCircleOutlined className="text-4xl text-orange-500 mb-4" />
+                  <Text type="secondary">Location not available</Text>
+                </div>
+              )}
+            </Space>
+          </Card>
+        </div>
 
         {/* Shift History */}
         <Card 
@@ -359,6 +440,13 @@ export default function WorkerDashboard() {
               <Text>
                 Are you sure you want to clock {actionType === 'clockin' ? 'in' : 'out'}?
               </Text>
+              {actionType === 'clockin' && currentShift && (
+                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                  <Text type="warning" className="text-sm">
+                    ⚠️ You have an active shift that will be automatically closed first.
+                  </Text>
+                </div>
+              )}
             </div>
             
             <div>

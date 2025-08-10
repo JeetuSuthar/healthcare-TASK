@@ -24,26 +24,6 @@ export default function LoginPage() {
       if (response.ok) {
         const userData = await response.json()
         
-        // For workers, check if there's an active shift that needs to be reset
-        if (userData.role === 'WORKER') {
-          try {
-            // Try to reset any active shifts
-            const resetResponse = await fetch('/api/shifts/reset', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-            })
-            
-            if (resetResponse.ok) {
-              const resetResult = await resetResponse.json()
-              if (resetResult.success) {
-                message.info('Previous unfinished shift has been automatically closed.', 5)
-              }
-            }
-          } catch (e) {
-            console.error("Failed to reset active shift:", e)
-          }
-        }
-        
         // Directly redirect based on role
         if (userData.role === 'MANAGER') {
           router.push('/manager/dashboard')

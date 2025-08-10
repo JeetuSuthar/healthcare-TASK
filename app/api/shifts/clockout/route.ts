@@ -38,7 +38,10 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(updatedShift)
+    return NextResponse.json({ 
+      success: true, 
+      shift: updatedShift 
+    })
   } catch (error) {
     console.error('Clock out error:', error)
     return NextResponse.json(

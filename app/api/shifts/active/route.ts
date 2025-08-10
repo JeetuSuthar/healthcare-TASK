@@ -9,27 +9,18 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Not authenticated' }, { status: 401 })
     }
 
-    interface JwtPayload {
-      userId: string;
-      role: string;
-      exp?: number;
-      iat?: number;
-    }
-    
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as JwtPayload
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') 
 
     const activeShift = await prisma.shift.findFirst({
       where: {
+        //@ts-ignore
         userId: decoded.userId,
         clockOutTime: null,
       },
     })
 
-    if (!activeShift) {
-      return NextResponse.json(null)
-    }
-
-    return NextResponse.json(activeShift)
+    // Return null explicitly if no active shift
+    return NextResponse.json(activeShift || null)
   } catch (error) {
     console.error('Get active shift error:', error)
     return NextResponse.json(
@@ -38,3 +29,5 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+
