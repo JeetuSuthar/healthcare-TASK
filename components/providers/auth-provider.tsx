@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshUser = async () => {
     try {
+  // Do not toggle global loading to avoid masking page-level spinners
       const response = await fetch('/api/auth/me', {
         headers: {
           'Cache-Control': 'no-cache',

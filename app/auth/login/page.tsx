@@ -9,16 +9,20 @@ import { useAuth } from '@/hooks/use-auth'
 const { Title, Text } = Typography
 
 export default function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const { login, loginWithGoogle, user } = useAuth()
+  const [emailLoading, setEmailLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
+  const { login, loginWithGoogle, user, refreshUser } = useAuth()
   const router = useRouter()
 
   // Watch for user changes and redirect accordingly
   useEffect(() => {
-    if (user && !loading) {
+    if (!user) return
+    const id = setTimeout(() => {
+      // Redirect as soon as we have a user; loading is allowed to be false or true
       redirectBasedOnRole(user.role)
-    }
-  }, [user, loading])
+    }, 0)
+    return () => clearTimeout(id)
+  }, [user])
 
   const redirectBasedOnRole = (userRole: string) => {
     console.log('Redirecting user with role:', userRole) // Debug log
@@ -34,26 +38,34 @@ export default function LoginPage() {
   }
 
   const onFinish = async (values: { email: string; password: string }) => {
-    setLoading(true)
+    setEmailLoading(true)
     try {
       await login(values.email, values.password)
+      // Ensure freshest user data, then allow effect to run
+      await refreshUser()
       message.success('Login successful!')
-      // Redirection will be handled by useEffect when user state updates
+      // Important: let loading be false so useEffect can redirect
+      setEmailLoading(false)
+      // Fallback: if user is already available, redirect immediately
+      if (user) {
+        redirectBasedOnRole(user.role)
+      }
     } catch (error) {
       message.error('Login failed. Please check your credentials.')
-      setLoading(false)
+      setEmailLoading(false)
     }
   }
 
   const handleGoogleLogin = async () => {
-    setLoading(true)
+    setGoogleLoading(true)
     try {
       await loginWithGoogle()
       message.success('Google login successful!')
-      // Redirection will be handled by useEffect when user state updates
+  // For OAuth, the browser navigates away; as a fallback, drop loading
+  setGoogleLoading(false)
     } catch (error) {
       message.error('Google login failed.')
-      setLoading(false)
+      setGoogleLoading(false)
     }
   }
 
@@ -101,7 +113,7 @@ export default function LoginPage() {
               type="primary"
               htmlType="submit"
               className="w-full"
-              loading={loading}
+              loading={emailLoading}
             >
               Sign In
             </Button>
@@ -116,7 +128,7 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full"
             size="large"
-            loading={loading}
+            loading={googleLoading}
           >
             Continue with Google
           </Button>

@@ -421,9 +421,22 @@ export default function WorkerDashboard() {
               Recent Shifts
             </div>
           }
-          className="shadow-lg"
+          className="shadow-lg overflow-hidden"
+          bodyStyle={{ padding: 0 }}
         >
-          <ShiftHistory />
+          {/* Scroll only inside this card; no page-level overflow */}
+          <div className="p-3 sm:p-4">
+            <div
+              className="w-full overflow-x-auto overscroll-contain"
+              aria-label="Recent shifts table"
+              role="region"
+              tabIndex={0}
+            >
+              <div className="min-w-[380px] sm:min-w-0">
+                <ShiftHistory />
+              </div>
+            </div>
+          </div>
         </Card>
 
         {/* Clock Action Modal */}
