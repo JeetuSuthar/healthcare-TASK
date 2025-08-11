@@ -235,50 +235,62 @@ export default function WorkerDashboard() {
 
   return (
     <WorkerLayout>
-      <div className="p-4 max-w-6xl mx-auto" key={forceRenderKey}>
+      <div className="p-3 sm:p-4 md:p-6 max-w-6xl mx-auto" key={forceRenderKey}>
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex justify-between items-center">
-            <Title level={2} className="mb-2 text-gray-800"> {/* Adjusted text color */}
-              Welcome back, {user?.firstName}! 👋
+        <header className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <Title level={2} className="!mb-1 text-xl sm:text-2xl md:text-3xl !text-gray-800">
+              {user?.firstName ? `Welcome, ${user.firstName}` : 'Your Dashboard'}
             </Title>
-            <Button onClick={handleRefresh} size="small">
-              Refresh Status
-            </Button>
+            <Text type="secondary" className="text-[13px] sm:text-sm !text-gray-600">
+              Manage your shift status & location in real-time
+            </Text>
           </div>
-          <LocationStatus />
-        </div>
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 order-first sm:order-last">
+            <span className={"flex items-center gap-1 " + (currentShift ? 'text-liefGreen-600' : 'text-orange-600') }>
+              <span className="inline-block w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: currentShift ? '#00BFA5' : '#fa8c16' }} />
+              {currentShift ? 'Clocked In' : 'Not Clocked In'}
+            </span>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              className="ml-2 px-2 py-1 rounded border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-liefGreen-500 transition text-gray-700"
+            >
+              Refresh
+            </button>
+          </div>
+        </header>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <Card className="text-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <Card className="text-center shadow-sm hover:shadow-md transition-shadow min-h-[120px]">
             <Statistic
               title="Current Status"
               value={currentShift ? 'Clocked In' : 'Not Clocked In'}
               prefix={currentShift ? <CheckCircleOutlined className="text-liefGreen-500" /> : <ExclamationCircleOutlined className="text-orange-500" />}
               valueStyle={{
                 color: currentShift ? '#00BFA5' : '#fa8c16', // Changed color to liefGreen
-                fontSize: '1.2rem'
+                fontSize: '1.05rem'
               }}
             />
           </Card>
-          <Card className="text-center">
+          <Card className="text-center shadow-sm hover:shadow-md transition-shadow min-h-[120px]">
             <Statistic
               title="Location Status"
               value={isWithinPerimeter ? 'Within Area' : 'Outside Area'}
               prefix={<EnvironmentOutlined className={isWithinPerimeter ? "text-liefGreen-500" : "text-red-500"} />}  
               valueStyle={{
                 color: isWithinPerimeter ? '#00BFA5' : '#ff4d4f', // Changed color to liefGreen
-                fontSize: '1.2rem'
+                fontSize: '1.05rem'
               }}
             />
           </Card>
-          <Card className="text-center sm:col-span-2 lg:col-span-1">
+          <Card className="text-center sm:col-span-2 lg:col-span-1 shadow-sm hover:shadow-md transition-shadow min-h-[120px]">
             <Statistic
               title="Current Shift Duration"
               value={currentShiftDuration ? `${currentShiftDuration.hours}h ${currentShiftDuration.minutes}m` : 'N/A'}
               prefix={<ClockCircleOutlined className="text-blue-500" />}
-              valueStyle={{ fontSize: '1.2rem' }}
+              valueStyle={{ fontSize: '1.05rem' }}
             />
           </Card>
         </div>
@@ -286,18 +298,17 @@ export default function WorkerDashboard() {
         {/* Main Action Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
           {/* Clock In/Out Card */}
-          <Card className="text-center shadow-lg">
+          <Card className="text-center shadow-lg relative overflow-hidden">
             <Space direction="vertical" size="large" className="w-full">
               <div className="text-6xl text-liefGreen-500 mb-4"> {/* Changed icon color */}
                 <ClockCircleOutlined />
               </div>
 
-              {/* Debug Info - Remove this after testing */}
-              <div className="text-xs text-gray-400 border border-gray-200 p-2 rounded mb-4">
-                Debug: {currentShift ? `Active Shift ID: ${currentShift.id}` : 'No Active Shift'} |
-                Loading: {loading ? 'true' : 'false'} |
-                Action: {actionType} |
-                Time: {new Date().toLocaleTimeString()}
+              {/* Debug Info hidden on very small screens */}
+              <div className="hidden sm:block text-[11px] text-gray-400 border border-gray-200 p-2 rounded mb-2">
+                <span className="font-medium mr-1">Debug:</span>
+                {currentShift ? `Shift ${currentShift.id}` : 'No Active Shift'} ·
+                {' '}Loading:{loading ? 'T' : 'F'} · Action:{actionType} · {new Date().toLocaleTimeString()}
               </div>
 
               {currentShift ? (
@@ -430,6 +441,7 @@ export default function WorkerDashboard() {
           okText={`Clock ${actionType === 'clockin' ? 'In' : 'Out'}`}
           cancelText="Cancel"
           width={500}
+          rootClassName="worker-clock-modal"
         >
           <Space direction="vertical" className="w-full" size="large">
             <div className="text-center">

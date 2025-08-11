@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any
 
-    // Get user
+    // Get user with fresh data from database
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -35,7 +35,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json(user)
+    // Add cache control headers to prevent caching
+    const response = NextResponse.json(user)
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
   } catch (error) {
     console.error('Auth check error:', error)
     return NextResponse.json(

@@ -189,6 +189,30 @@
   }
 }
 
+/* Shift history enhancements */
+.shift-history-table .active-shift-row td {
+  background: linear-gradient(90deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+  position: relative;
+}
+.shift-history-table .active-shift-row td:first-child {
+  border-left: 4px solid #00BFA5;
+}
+.shift-history-table .active-shift-row:hover td {
+  background: linear-gradient(90deg, rgba(16,185,129,0.14), rgba(16,185,129,0.04));
+}
+.shift-history-table .ant-table-tbody > tr > td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.shift-history-table .ant-table-thead > tr > th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+.shift-history-table .ant-pagination {
+  margin: 12px 0 !important;
+}
+
 /* Print styles */
 @media print {
   .ant-btn,
@@ -294,4 +318,26 @@
 
 .shadow-strong {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal responsive overrides */
+.worker-clock-modal .ant-modal {
+  max-width: 95vw !important;
+  margin: 12px auto !important;
+  padding: 0;
+}
+.manager-settings-modal .ant-modal {
+  max-width: 96vw !important;
+  margin: 12px auto !important;
+}
+@media (max-width: 480px) {
+  .worker-clock-modal .ant-modal, .manager-settings-modal .ant-modal {
+    width: 100% !important;
+  }
+  .worker-clock-modal .ant-modal-content, .manager-settings-modal .ant-modal-content {
+    padding: 12px 14px;
+  }
+  .ant-modal-title {
+    font-size: 16px;
+  }
 }

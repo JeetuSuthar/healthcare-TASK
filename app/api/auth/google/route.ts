@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       redirectUri
     );
 
-    // Generate the OAuth URL
+    // Generate the OAuth URL with account selection and consent
     const authorizeUrl = client.generateAuthUrl({
       access_type: 'offline',
       scope: [
@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
         'https://www.googleapis.com/auth/userinfo.email'
       ],
       include_granted_scopes: true,
+      prompt: 'select_account consent', // Force account selection and consent screen
     });
 
     console.log('Generated OAuth URL:', authorizeUrl);

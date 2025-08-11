@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Form, Input, Button, Typography, Divider, message, Space } from 'antd'
 import { UserOutlined, LockOutlined, GoogleOutlined, MailOutlined } from '@ant-design/icons'
@@ -10,50 +10,50 @@ const { Title, Text } = Typography
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, user } = useAuth()
   const router = useRouter()
+
+  // Watch for user changes and redirect accordingly
+  useEffect(() => {
+    if (user && !loading) {
+      redirectBasedOnRole(user.role)
+    }
+  }, [user, loading])
+
+  const redirectBasedOnRole = (userRole: string) => {
+    console.log('Redirecting user with role:', userRole) // Debug log
+    
+    if (userRole === 'MANAGER') {
+      router.push('/manager/dashboard')
+    } else if (userRole === 'WORKER') {
+      router.push('/worker/dashboard')
+    } else {
+      console.warn('Unknown role:', userRole)
+      router.push('/')
+    }
+  }
 
   const onFinish = async (values: { email: string; password: string }) => {
     setLoading(true)
     try {
       await login(values.email, values.password)
       message.success('Login successful!')
-      
-      // Wait longer to ensure auth context is fully updated
-      setTimeout(async () => {
-        try {
-          // Get fresh user data from server
-          const response = await fetch('/api/auth/me')
-          if (response.ok) {
-            const userData = await response.json()
-            
-            // Navigate based on role with explicit paths
-            if (userData.role === 'MANAGER') {
-              window.location.href = '/manager/dashboard'
-            } else {
-              window.location.href = '/worker/dashboard'
-            }
-          } else {
-            window.location.href = '/'
-          }
-        } catch (error) {
-          console.error('Navigation error:', error)
-          window.location.href = '/'
-        }
-      }, 500) // Longer delay to ensure auth context is ready
+      // Redirection will be handled by useEffect when user state updates
     } catch (error) {
       message.error('Login failed. Please check your credentials.')
-    } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleLogin = async () => {
+    setLoading(true)
     try {
       await loginWithGoogle()
-      router.push('/')
+      message.success('Google login successful!')
+      // Redirection will be handled by useEffect when user state updates
     } catch (error) {
       message.error('Google login failed.')
+      setLoading(false)
     }
   }
 
@@ -116,6 +116,7 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             className="w-full"
             size="large"
+            loading={loading}
           >
             Continue with Google
           </Button>

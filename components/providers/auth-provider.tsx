@@ -17,6 +17,7 @@ interface AuthContextType {
   register: (userData: any) => Promise<void>
   logout: () => Promise<void>
   loginWithGoogle: () => Promise<void>
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,15 +34,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me')
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store'
+      })
       if (response.ok) {
         const userData = await response.json()
+        console.log('Auth check - user data:', userData) // Debug log
         setUser(userData)
+      } else {
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      setUser(null)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const refreshUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+        },
+        cache: 'no-store'
+      })
+      if (response.ok) {
+        const userData = await response.json()
+        console.log('Refresh user - user data:', userData) // Debug log
+        setUser(userData)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      console.error('User refresh failed:', error)
+      setUser(null)
     }
   }
 
@@ -56,8 +89,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Login failed')
     }
 
-    const userData = await response.json()
-    setUser(userData)
+    // Don't set user from login response - fetch fresh data instead
+    // This ensures we get the most up-to-date user data
+    await refreshUser()
   }
 
   const register = async (userData: any) => {
@@ -71,13 +105,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Registration failed')
     }
 
-    const user = await response.json()
-    setUser(user)
+    // Don't set user from register response - fetch fresh data instead
+    await refreshUser()
   }
 
   const logout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    setUser(null)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      
+      // Clear any cached data
+      localStorage.clear()
+      sessionStorage.clear()
+      
+      // Force reload to clear any cached state
+      window.location.href = '/auth/login'
+    } catch (error) {
+      console.error('Logout error:', error)
+      setUser(null)
+      window.location.href = '/auth/login'
+    }
   }
 
   const loginWithGoogle = async () => {
@@ -93,16 +139,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       loginWithGoogle,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>
   )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
 }
