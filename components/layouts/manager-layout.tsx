@@ -122,20 +122,21 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-        <div className="flex items-center justify-between px-6 h-16">
-          <div className="flex items-center space-x-4">
+      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50 w-full">
+        <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 h-14 sm:h-16 w-full max-w-full">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
-              className="lg:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="lg:hidden p-1.5 sm:p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               {isSidebarOpen ? <CloseIcon2 /> : <MenuIcon2 />}
             </button>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              ShiftTracker Manager
+            <h1 className="text-sm sm:text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent truncate">
+              <span className="sm:hidden">Manager</span>
+              <span className="hidden sm:inline">ShiftTracker Manager</span>
             </h1>
           </div>
 
@@ -143,12 +144,12 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center space-x-3 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+              className="flex items-center space-x-1 sm:space-x-3 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-sm font-medium shadow-sm">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white text-xs sm:text-sm font-medium shadow-sm">
                 {user?.firstName?.[0] || 'M'}
               </div>
-              <span className="hidden sm:block font-medium text-gray-800">
+              <span className="hidden sm:block font-medium text-gray-800 text-sm md:text-base truncate max-w-[100px] md:max-w-none">
                 {user?.firstName || "Manager"}
               </span>
               <ChevronDownIcon2 isOpen={isDropdownOpen} />
@@ -180,7 +181,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex w-full max-w-full">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -193,12 +194,12 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
         <aside className={`
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 fixed lg:static inset-y-0 left-0 z-40
-          w-64 max-w-full bg-white shadow-lg border-r border-gray-200
+          w-56 sm:w-64 max-w-full bg-white shadow-lg border-r border-gray-200
           transition-transform duration-300 ease-in-out
           flex flex-col
         `} aria-label="Manager sidebar navigation">
-          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-            <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+          <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between">
+            <div className="text-xs sm:text-sm font-semibold text-gray-500 uppercase tracking-wide truncate">
               Manager Panel
             </div>
             <button
@@ -239,20 +240,21 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 lg:ml-0">
-          <div className="p-4 sm:p-6">
+        <main className="flex-1 lg:ml-0 w-full max-w-full overflow-hidden">
+          <div className="w-full max-w-full">
             {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-xl p-5 sm:p-6 mb-6 text-white shadow-lg overflow-hidden">
-              <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">
+            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 rounded-lg mx-2 sm:mx-4 md:mx-6 mt-2 sm:mt-4 md:mt-6 mb-4 sm:mb-6 p-3 sm:p-4 md:p-6 text-white shadow-lg overflow-hidden">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">
                 Welcome, {user?.firstName || "Manager"}! 📊
               </h2>
-              <p className="text-blue-100 opacity-90 text-sm sm:text-base">
-                Manage your team, track performance, and oversee operations
+              <p className="text-blue-100 opacity-90 text-xs sm:text-sm md:text-base">
+                <span className="sm:hidden">Manage your team & operations</span>
+                <span className="hidden sm:inline">Manage your team, track performance, and oversee operations</span>
               </p>
             </div>
 
             {/* Content Area */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 min-h-[calc(100vh-280px)] p-3 sm:p-4">
+            <div className="bg-white rounded-lg mx-2 sm:mx-4 md:mx-6 mb-2 sm:mb-4 md:mb-6 shadow-sm border border-gray-200 min-h-[calc(100vh-280px)] overflow-hidden">
               {children}
             </div>
           </div>
