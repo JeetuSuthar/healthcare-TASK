@@ -415,17 +415,17 @@ export default function WorkerDashboard() {
 
         {/* Shift History */}
         <Card
-          title={
-            <div className="flex items-center text-gray-800"> {/* Adjusted text color */}
-              <CalendarOutlined className="mr-2" />
-              Recent Shifts
-            </div>
-          }
-          className="shadow-lg overflow-hidden"
-          bodyStyle={{ padding: 0 }}
+          // title={
+          //   <div className="flex items-center text-gray-800"> {/* Adjusted text color */}
+          //     <CalendarOutlined className="mr-2" />
+          //     Recent Shifts
+          //   </div>
+          // }
+          // className="shadow-lg overflow-hidden"
+          // bodyStyle={{ padding: 0 }}
         >
           {/* Scroll only inside this card; no page-level overflow */}
-          <div className="p-3 sm:p-4">
+          {/* <div className="p-3 sm:p-4">
             <div
               className="w-full overflow-x-auto overscroll-contain"
               aria-label="Recent shifts table"
@@ -436,7 +436,7 @@ export default function WorkerDashboard() {
                 <ShiftHistory />
               </div>
             </div>
-          </div>
+          </div> */}
         </Card>
 
         {/* Clock Action Modal */}

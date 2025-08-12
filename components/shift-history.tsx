@@ -107,18 +107,18 @@ export const ShiftHistory = () => {
     return `${days}d`
   }, [])
 
-  // Compact columns with percentage-based widths
+  // Mobile-first responsive columns
   const columns = useMemo(() => [
     {
       title: 'Date',
       dataIndex: 'clockInTime',
       key: 'date',
-      width: '25%',
+      width: '28%',
       render: (time: string) => {
         const full = formatFullIST(time)
         return (
           <Tooltip title={full} placement="top">
-            <div className="w-full">
+            <div className="w-full min-w-0">
               <div className="text-xs font-medium truncate">{formatDate(time)}</div>
               <div className="text-xs text-gray-500 truncate">{timeAgo(time)}</div>
             </div>
@@ -132,12 +132,12 @@ export const ShiftHistory = () => {
       title: 'In',
       dataIndex: 'clockInTime',
       key: 'clockIn',
-      width: '20%',
+      width: '18%',
       render: (time: string) => {
         const full = formatFullIST(time)
         return (
           <Tooltip title={full} placement="top">
-            <div className="w-full text-center">
+            <div className="w-full text-center min-w-0">
               <div className="text-xs font-medium text-green-600 truncate">{formatTime(time)}</div>
               <div className="text-xs text-gray-500 truncate">{timeAgo(time)}</div>
             </div>
@@ -149,10 +149,10 @@ export const ShiftHistory = () => {
       title: 'Out',
       dataIndex: 'clockOutTime',
       key: 'clockOut',
-      width: '20%',
+      width: '18%',
       render: (time: string, record: Shift) => time ? (
         <Tooltip title={formatFullIST(time)} placement="top">
-          <div className="w-full text-center">
+          <div className="w-full text-center min-w-0">
             <div className="text-xs font-medium text-red-600 truncate">{formatTime(time)}</div>
             <div className="text-xs text-gray-500 truncate">{timeAgo(time)}</div>
           </div>
@@ -166,7 +166,7 @@ export const ShiftHistory = () => {
     {
       title: 'Hours',
       key: 'duration',
-      width: '15%',
+      width: '16%',
       render: (record: Shift) => {
         const duration = calculateDuration(record.clockInTime, record.clockOutTime)
         if (!duration) {
@@ -191,11 +191,11 @@ export const ShiftHistory = () => {
         }
         
         const allNotes = [clockInNote, record.clockOutNote].filter(Boolean).join(' | ')
-        const shortNote = allNotes.length > 15 ? allNotes.slice(0, 12) + '...' : allNotes
+        const shortNote = allNotes.length > 12 ? allNotes.slice(0, 9) + '...' : allNotes
         
         return (
           <Tooltip title={allNotes}>
-            <div className="w-full text-center">
+            <div className="w-full text-center min-w-0">
               <div className="text-xs text-blue-600 truncate">{shortNote}</div>
             </div>
           </Tooltip>
@@ -242,8 +242,8 @@ export const ShiftHistory = () => {
 
   return (
     <>
-      {/* ABSOLUTELY CONSTRAINED CONTAINER */}
-      <div className="w-full max-w-full overflow-hidden">
+      {/* MOBILE-FIRST RESPONSIVE CONTAINER */}
+      <div className="w-full max-w-full">
         <div className="w-full overflow-x-auto">
           <Table
             columns={columns}
@@ -255,105 +255,103 @@ export const ShiftHistory = () => {
               showQuickJumper: false,
               showTotal: (total, range) => `${range[0]}-${range[1]} of ${total}`,
               size: 'small',
-              className: 'text-xs'
+              className: 'text-xs responsive-pagination'
             }}
-            scroll={{ x: 400 }}
+            scroll={{ x: 320 }} // Reduced minimum width for mobile
             size="small"
-            className="compact-shift-table"
+            className="mobile-responsive-shift-table"
             rowClassName={(record: Shift) => !record.clockOutTime ? 'active-shift-row' : ''}
           />
         </div>
       </div>
 
-      {/* CRITICAL: Styles that FORCE container constraints */}
+      {/* MOBILE-FIRST RESPONSIVE STYLES */}
       <style jsx global>{`
-        /* CONTAINER CONSTRAINTS - MOST IMPORTANT */
-        .compact-shift-table {
+        /* BASE MOBILE STYLES - MOST IMPORTANT */
+        .mobile-responsive-shift-table {
           width: 100% !important;
           max-width: 100% !important;
-          overflow: hidden !important;
         }
         
-        .compact-shift-table .ant-table-wrapper {
+        .mobile-responsive-shift-table .ant-table-wrapper {
           width: 100% !important;
           max-width: 100% !important;
-          overflow: hidden !important;
         }
         
-        .compact-shift-table .ant-table-container {
+        .mobile-responsive-shift-table .ant-table-container {
           width: 100% !important;
           max-width: 100% !important;
           overflow-x: auto !important;
           overflow-y: hidden !important;
         }
         
-        .compact-shift-table .ant-table {
+        .mobile-responsive-shift-table .ant-table {
           width: 100% !important;
           max-width: 100% !important;
-          min-width: 400px !important;
+          min-width: 320px !important; /* Reduced for mobile */
           table-layout: fixed !important;
         }
         
-        /* FORCE COLUMN WIDTHS */
-        .compact-shift-table .ant-table-thead > tr > th:nth-child(1),
-        .compact-shift-table .ant-table-tbody > tr > td:nth-child(1) {
-          width: 25% !important;
-          max-width: 25% !important;
+        /* MOBILE COLUMN WIDTHS */
+        .mobile-responsive-shift-table .ant-table-thead > tr > th:nth-child(1),
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td:nth-child(1) {
+          width: 28% !important;
+          max-width: 28% !important;
           min-width: 0 !important;
         }
         
-        .compact-shift-table .ant-table-thead > tr > th:nth-child(2),
-        .compact-shift-table .ant-table-tbody > tr > td:nth-child(2) {
+        .mobile-responsive-shift-table .ant-table-thead > tr > th:nth-child(2),
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td:nth-child(2) {
+          width: 18% !important;
+          max-width: 18% !important;
+          min-width: 0 !important;
+        }
+        
+        .mobile-responsive-shift-table .ant-table-thead > tr > th:nth-child(3),
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td:nth-child(3) {
+          width: 18% !important;
+          max-width: 18% !important;
+          min-width: 0 !important;
+        }
+        
+        .mobile-responsive-shift-table .ant-table-thead > tr > th:nth-child(4),
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td:nth-child(4) {
+          width: 16% !important;
+          max-width: 16% !important;
+          min-width: 0 !important;
+        }
+        
+        .mobile-responsive-shift-table .ant-table-thead > tr > th:nth-child(5),
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td:nth-child(5) {
           width: 20% !important;
           max-width: 20% !important;
           min-width: 0 !important;
         }
         
-        .compact-shift-table .ant-table-thead > tr > th:nth-child(3),
-        .compact-shift-table .ant-table-tbody > tr > td:nth-child(3) {
-          width: 20% !important;
-          max-width: 20% !important;
-          min-width: 0 !important;
-        }
-        
-        .compact-shift-table .ant-table-thead > tr > th:nth-child(4),
-        .compact-shift-table .ant-table-tbody > tr > td:nth-child(4) {
-          width: 15% !important;
-          max-width: 15% !important;
-          min-width: 0 !important;
-        }
-        
-        .compact-shift-table .ant-table-thead > tr > th:nth-child(5),
-        .compact-shift-table .ant-table-tbody > tr > td:nth-child(5) {
-          width: 20% !important;
-          max-width: 20% !important;
-          min-width: 0 !important;
-        }
-        
-        /* CELL CONTENT CONSTRAINTS */
-        .compact-shift-table .ant-table-thead > tr > th,
-        .compact-shift-table .ant-table-tbody > tr > td {
-          padding: 8px 4px !important;
-          font-size: 11px !important;
+        /* MOBILE CELL STYLES */
+        .mobile-responsive-shift-table .ant-table-thead > tr > th,
+        .mobile-responsive-shift-table .ant-table-tbody > tr > td {
+          padding: 6px 2px !important;
+          font-size: 10px !important;
           border-bottom: 1px solid #f0f0f0;
           overflow: hidden !important;
           text-overflow: ellipsis !important;
-          white-space: nowrap !important;
         }
         
-        .compact-shift-table .ant-table-thead > tr > th {
+        .mobile-responsive-shift-table .ant-table-thead > tr > th {
           background: #fafafa;
           font-weight: 600;
           text-align: center;
+          font-size: 10px !important;
         }
         
-        /* PREVENT ANY EXPANSION */
-        .compact-shift-table * {
+        /* PREVENT OVERFLOW */
+        .mobile-responsive-shift-table * {
           box-sizing: border-box !important;
         }
         
-        .compact-shift-table .truncate,
-        .compact-shift-table div {
+        .mobile-responsive-shift-table .truncate,
+        .mobile-responsive-shift-table div {
           overflow: hidden !important;
           text-overflow: ellipsis !important;
           white-space: nowrap !important;
@@ -361,65 +359,97 @@ export const ShiftHistory = () => {
         }
         
         /* ACTIVE ROW STYLING */
-        .compact-shift-table .active-shift-row {
+        .mobile-responsive-shift-table .active-shift-row {
           background-color: #f6ffed !important;
-          border-left: 3px solid #52c41a !important;
+          border-left: 2px solid #52c41a !important;
         }
         
-        /* MOBILE OPTIMIZATIONS */
-        @media (max-width: 640px) {
-          .compact-shift-table .ant-table {
-            min-width: 350px !important;
-          }
-          
-          .compact-shift-table .ant-table-thead > tr > th,
-          .compact-shift-table .ant-table-tbody > tr > td {
-            padding: 6px 2px !important;
-            font-size: 10px !important;
-          }
-          
-          .compact-shift-table .ant-table-pagination {
-            margin: 8px 0 !important;
-            text-align: center;
-          }
-          
-          .compact-shift-table .ant-pagination-item,
-          .compact-shift-table .ant-pagination-prev,
-          .compact-shift-table .ant-pagination-next {
-            min-width: 28px !important;
-            height: 28px !important;
-            line-height: 26px !important;
-            margin: 0 2px !important;
-          }
+        /* MOBILE SCROLLBAR */
+        .mobile-responsive-shift-table .ant-table-body::-webkit-scrollbar {
+          height: 3px;
         }
         
-        /* SCROLLBAR STYLING */
-        .compact-shift-table .ant-table-body::-webkit-scrollbar {
-          height: 4px;
-        }
-        
-        .compact-shift-table .ant-table-body::-webkit-scrollbar-track {
+        .mobile-responsive-shift-table .ant-table-body::-webkit-scrollbar-track {
           background: #f8f9fa;
           border-radius: 2px;
         }
         
-        .compact-shift-table .ant-table-body::-webkit-scrollbar-thumb {
+        .mobile-responsive-shift-table .ant-table-body::-webkit-scrollbar-thumb {
           background: #dee2e6;
           border-radius: 2px;
         }
         
-        .compact-shift-table .ant-table-body::-webkit-scrollbar-thumb:hover {
+        .mobile-responsive-shift-table .ant-table-body::-webkit-scrollbar-thumb:hover {
           background: #adb5bd;
         }
         
-        /* FINAL SAFETY NET - PREVENT ANY OVERFLOW */
-        .compact-shift-table,
-        .compact-shift-table *,
-        .compact-shift-table .ant-table-wrapper,
-        .compact-shift-table .ant-table-container,
-        .compact-shift-table .ant-table {
-          overflow-x: auto !important;
-          max-width: 100% !important;
+        /* RESPONSIVE PAGINATION */
+        .responsive-pagination {
+          margin: 8px 0 !important;
+        }
+        
+        .responsive-pagination .ant-pagination-item,
+        .responsive-pagination .ant-pagination-prev,
+        .responsive-pagination .ant-pagination-next {
+          min-width: 24px !important;
+          height: 24px !important;
+          line-height: 22px !important;
+          margin: 0 1px !important;
+          font-size: 10px !important;
+        }
+        
+        .responsive-pagination .ant-pagination-total-text {
+          font-size: 10px !important;
+        }
+        
+        /* TABLET AND DESKTOP IMPROVEMENTS */
+        @media (min-width: 640px) {
+          .mobile-responsive-shift-table .ant-table {
+            min-width: 400px !important;
+          }
+          
+          .mobile-responsive-shift-table .ant-table-thead > tr > th,
+          .mobile-responsive-shift-table .ant-table-tbody > tr > td {
+            padding: 8px 4px !important;
+            font-size: 11px !important;
+          }
+          
+          .mobile-responsive-shift-table .ant-table-thead > tr > th {
+            font-size: 11px !important;
+          }
+          
+          .responsive-pagination .ant-pagination-item,
+          .responsive-pagination .ant-pagination-prev,
+          .responsive-pagination .ant-pagination-next {
+            min-width: 28px !important;
+            height: 28px !important;
+            line-height: 26px !important;
+            margin: 0 2px !important;
+            font-size: 12px !important;
+          }
+          
+          .responsive-pagination .ant-pagination-total-text {
+            font-size: 12px !important;
+          }
+        }
+        
+        @media (min-width: 768px) {
+          .mobile-responsive-shift-table .ant-table-thead > tr > th,
+          .mobile-responsive-shift-table .ant-table-tbody > tr > td {
+            padding: 10px 6px !important;
+            font-size: 12px !important;
+          }
+          
+          .mobile-responsive-shift-table .ant-table-thead > tr > th {
+            font-size: 12px !important;
+          }
+        }
+        
+        /* FINAL SAFETY - NO HORIZONTAL OVERFLOW */
+        .mobile-responsive-shift-table,
+        .mobile-responsive-shift-table .ant-table-wrapper,
+        .mobile-responsive-shift-table .ant-table-container {
+          max-width: 100vw !important;
         }
       `}</style>
     </>
