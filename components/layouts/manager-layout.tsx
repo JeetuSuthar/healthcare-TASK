@@ -211,7 +211,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <nav className="flex-1 p-4 space-y-2">
+          <nav className="flex-1 p-3 sm:p-4 space-y-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.key
               return (
@@ -222,7 +222,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
                     setIsSidebarOpen(false)
                   }}
                   className={`
-                    w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left font-medium transition-all duration-200
+                    w-full flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-left font-medium transition-all duration-200 text-sm sm:text-base
                     ${isActive 
                       ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-500' 
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -232,7 +232,7 @@ export function ManagerLayout({ children }: { children: React.ReactNode }) {
                   <span className={isActive ? 'text-blue-600' : 'text-gray-400'}>
                     {item.icon}
                   </span>
-                  <span>{item.label}</span>
+                  <span className="truncate">{item.label}</span>
                 </button>
               )
             })}
