@@ -15,6 +15,7 @@ import { WorkerLayout } from "@/components/layouts/worker-layout"
 import { LocationStatus } from "@/components/location-status"
 import { ShiftHistory } from "@/components/shift-history"
 import { Loading } from "@/components/ui/loading"
+import { useLocationNotifications } from "@/components/pwa-manager"
 import { flushSync } from "react-dom"
 
 const { Title, Text } = Typography
@@ -22,7 +23,12 @@ const { TextArea } = Input
 
 export default function WorkerDashboard() {
   const { user } = useAuth()
-  const { location, isWithinPerimeter, loading: locationLoading } = useLocation()
+  const { location, isWithinPerimeter, loading: locationLoading, perimeter } = useLocation()
+  const { notificationPermission, requestPermission, isSupported } = useLocationNotifications({
+    isWithinPerimeter,
+    location,
+    perimeter
+  })
   const [currentShift, setCurrentShift] = useState<any>(null)
   const [noteModalVisible, setNoteModalVisible] = useState(false)
   const [note, setNote] = useState('')
@@ -260,6 +266,45 @@ export default function WorkerDashboard() {
             </button>
           </div>
         </header>
+
+        {/* Notification Permission Banner */}
+        {isSupported && notificationPermission === 'default' && (
+          <Card className="mb-4 border-blue-200 bg-blue-50">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center space-x-3">
+                <div className="text-2xl">🔔</div>
+                <div>
+                  <Text strong>Enable Location Notifications</Text>
+                  <div className="text-sm text-gray-600 mt-1">
+                    Get notified when you enter or leave the work area
+                  </div>
+                </div>
+              </div>
+              <Button
+                type="primary"
+                onClick={requestPermission}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                Enable Notifications
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Notification Status */}
+        {isSupported && notificationPermission === 'granted' && (
+          <Card className="mb-4 border-green-200 bg-green-50">
+            <div className="flex items-center space-x-3">
+              <div className="text-2xl">✅</div>
+              <div>
+                <Text strong className="text-green-700">Location Notifications Enabled</Text>
+                <div className="text-sm text-green-600 mt-1">
+                  You'll be notified when entering or leaving the work area
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6">

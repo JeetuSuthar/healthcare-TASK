@@ -14,6 +14,7 @@ interface LocationContextType {
   isWithinPerimeter: boolean
   loading: boolean
   refreshLocation: () => void
+  perimeter: { latitude: number; longitude: number; radius: number } | null
 }
 
 const LocationContext = createContext<LocationContextType | undefined>(undefined)
@@ -59,7 +60,28 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       perimeter.longitude
     )
 
-    setIsWithinPerimeter(distance <= perimeter.radius)
+    const withinPerimeter = distance <= perimeter.radius
+    
+    // Send location update to service worker for notifications
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.active?.postMessage({
+          type: 'LOCATION_UPDATE',
+          location: currentLocation,
+          perimeter: {
+            latitude: perimeter.latitude,
+            longitude: perimeter.longitude,
+            radius: perimeter.radius
+          },
+          isWithinPerimeter: withinPerimeter,
+          distance: Math.round(distance)
+        })
+      }).catch((error) => {
+        console.error('Error sending location to service worker:', error)
+      })
+    }
+
+    setIsWithinPerimeter(withinPerimeter)
   }, [perimeter, calculateDistance])
 
   // Debounced location update
@@ -177,7 +199,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
     isWithinPerimeter,
     loading,
     refreshLocation,
-  }), [location, isWithinPerimeter, loading, refreshLocation])
+    perimeter,
+  }), [location, isWithinPerimeter, loading, refreshLocation, perimeter])
 
   return (
     <LocationContext.Provider value={contextValue}>
