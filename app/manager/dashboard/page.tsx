@@ -152,7 +152,7 @@ export default function ManagerDashboard() {
                 className="w-full sm:w-auto text-xs"
                 style={{ backgroundColor: "#00BFA5", borderColor: "#00BFA5" }}
               >
-                Settings
+                Location Settings
               </Button>
             </div>
           </header>
