@@ -15,7 +15,7 @@ export function useLocationNotifications({ isWithinPerimeter, location, perimete
 
   // Request notification permission on mount
   useEffect(() => {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotificationPermission(Notification.permission)
       
       if (Notification.permission === 'default') {
@@ -31,7 +31,7 @@ export function useLocationNotifications({ isWithinPerimeter, location, perimete
 
   // Monitor perimeter state changes
   useEffect(() => {
-    if (previousPerimeterState !== null && previousPerimeterState !== isWithinPerimeter) {
+    if (typeof window !== 'undefined' && previousPerimeterState !== null && previousPerimeterState !== isWithinPerimeter) {
       // State changed - trigger notification via service worker
       if ('serviceWorker' in navigator && location && perimeter) {
         navigator.serviceWorker.ready.then((registration) => {
@@ -67,7 +67,7 @@ export function useLocationNotifications({ isWithinPerimeter, location, perimete
   }, [isWithinPerimeter, previousPerimeterState])
 
   const requestPermission = async () => {
-    if ('Notification' in window && Notification.permission === 'default') {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
       const permission = await Notification.requestPermission()
       setNotificationPermission(permission)
       
@@ -82,7 +82,7 @@ export function useLocationNotifications({ isWithinPerimeter, location, perimete
   return {
     notificationPermission,
     requestPermission,
-    isSupported: 'Notification' in window
+    isSupported: typeof window !== 'undefined' && 'Notification' in window
   }
 }
 
@@ -91,6 +91,8 @@ export function PWAInstallPrompt() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
@@ -158,6 +160,8 @@ export function PWAManager() {
   const [updateAvailable, setUpdateAvailable] = useState(false)
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
@@ -206,7 +210,7 @@ export function PWAManager() {
   }, [])
 
   const handleUpdate = () => {
-    if ('serviceWorker' in navigator) {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistration().then((registration) => {
         if (registration?.waiting) {
           registration.waiting.postMessage({ type: 'SKIP_WAITING' })

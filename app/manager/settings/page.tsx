@@ -158,7 +158,7 @@ export default function ManagerSettings() {
   }
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           form.setFieldsValue({

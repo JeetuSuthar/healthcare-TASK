@@ -126,8 +126,10 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const getCurrentLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      message.error('Geolocation is not supported by this browser.')
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      if (typeof window !== 'undefined') {
+        message.error('Geolocation is not supported by this browser.')
+      }
       setLoading(false)
       return
     }
@@ -161,6 +163,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
   }, [getCurrentLocation])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     fetchPerimeterSettings()
     getCurrentLocation()
     
